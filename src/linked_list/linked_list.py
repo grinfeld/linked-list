@@ -25,20 +25,27 @@ class _EmptyNode(_Node[T]):
 class LinkedList(Generic[T]):
     """
     Class represents 2-direction LinkedList
+    add and prepend are O(1)
+    pop and peek for first and last element are O(1)
+    find element by index O(n)
     """
     def __init__(self):
-        self._root = _EmptyNode()
-        self._last = _EmptyNode()
+        self._empty = _EmptyNode()
+        self._root = self._empty
+        self._last = self._root
         self._size = 0
 
     def push(self, value: T):
-        new_node = _Node(value, _EmptyNode(), self._root)
+        the_last = self._last
         if self._root.is_empty():
-            self._last = self._root = new_node
+            self._root = _Node(value, self._empty, the_last)
+            self._last = self._root
         else:
-            self._last = _Node(value, _EmptyNode(), self._last)
+            new_node = _Node(value, self._empty, the_last)
+            the_last.next = new_node
+            self._last = new_node
             if len(self) == 1:
-                self._root.next = new_node
+                self._root = the_last
         self._size = self._size + 1
 
     def __len__(self) -> int:
@@ -82,6 +89,7 @@ class LinkedList(Generic[T]):
     K = TypeVar("K")
     def map(self, fn: Callable[[T], K]) -> LinkedList[K]:
         """Converts current linked list to another transforming data by function
+        runs over the list immediately as map operation is called
             :param fn - function to transform data of type K to type V
             :return new LinkedList[K] with transformed data
         """
@@ -92,6 +100,7 @@ class LinkedList(Generic[T]):
 
     def map_reverse(self, fn: Callable[[T], K]) -> LinkedList[K]:
         """Converts current linked list in reverse order to another transforming data by function
+        runs over the list immediately as map_reverse operation is called
             :param fn - function to transform data of type K to type V
             :return new LinkedList[K] with transformed data
         """
@@ -117,7 +126,7 @@ class LinkedList(Generic[T]):
             return None
         else:
             the_last = self._last.value
-            self._last.prev.next = _EmptyNode()
+            self._last.prev.next = self._empty
             self._last = self._last.prev
             self._size = self._size - 1
             return the_last
@@ -127,12 +136,39 @@ class LinkedList(Generic[T]):
             return None
         else:
             the_value = self._root.value
-            self._root.next.prev = _EmptyNode()
+            self._root.next.prev = self._empty
             self._root = self._root.next
             self._size = self._size - 1
             if len(self) == 1:
                 self._last = self._root
             return the_value
+
+    def get(self, ind: int) -> T:
+        """
+        Finds the element by its index in the list. For LinkedList, this operation takes O(n)
+        :param ind: element in the list
+        :return: the element by its index in the list
+        :raises IndexError: if index is out of range
+        """
+        if ind < 0 or ind > self._size-1:
+            raise IndexError("Index out of range")
+        i = 0
+        for v in self:
+            if i == ind:
+                return v
+            i = i + 1
+        return None
+
+    def exists(self, value: T) -> bool:
+        """
+        Checks whether the element exists in the list. For LinkedList, this operation takes O(n)
+        :param value: T to test if it exists in the list
+        :return: True if element exists and False if it doesn't
+        """
+        for v in self:
+            if v == value:
+                return True
+        return False
 
     def __repr__(self) -> str:
         return f"LinkedList({list(self)})"
