@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TypeVar, Generic, Iterator, Callable, List
+from typing import TypeVar, Generic, Iterator, Callable, List, Iterable
 
 T = TypeVar('T')
 
@@ -35,7 +35,7 @@ class LinkedList(Generic[T]):
         self._last = self._root
         self._size = 0
 
-    def push(self, value: T):
+    def push(self, value: T) -> LinkedList[K]:
         the_last = self._last
         if self._root.is_empty():
             self._root = _Node(value, self._empty, the_last)
@@ -47,6 +47,10 @@ class LinkedList(Generic[T]):
             if len(self) == 1:
                 self._root = the_last
         self._size = self._size + 1
+        return self
+
+    def __iadd__(self, *args, **kwargs):
+        return self.push(args[0])
 
     def __len__(self) -> int:
         return self._size
@@ -159,6 +163,36 @@ class LinkedList(Generic[T]):
             i = i + 1
         return None
 
+    def __getitem__(self, *args, **kwargs):
+        """
+        Finds the element by its index in the list. For LinkedList, this operation takes O(n)
+        :param ind: element in the list
+        :return: the element by its index in the list
+        :raises IndexError: if index is out of range
+        """
+        return self.get(args[0])
+
+    def set(self, ind: int, value: T) -> LinkedList[K]:
+        """
+         Sets the element by its index in the list. For LinkedList, this operation takes O(n)
+         :param ind: element in the list
+         :param value: new value
+         :return: the element by its index in the list
+         :raises IndexError: if index is out of range
+         """
+        if ind < 0 or ind > self._size-1:
+            raise IndexError("Index out of range")
+        i = 0
+        for v in self._inner_iter():
+            if i == ind:
+                v.value = value
+                break
+            i = i + 1
+        return self
+
+    def __setitem__(self, *args, **kwargs):
+        return self.set(args[0], args[1])
+
     def exists(self, value: T) -> bool:
         """
         Checks whether the element exists in the list. For LinkedList, this operation takes O(n)
@@ -169,6 +203,38 @@ class LinkedList(Generic[T]):
             if v == value:
                 return True
         return False
+
+    def aggregate(self, zero: Generic[K], fn: Callable[[T, T], K]) -> Generic[K]:
+        agg = zero
+        for v in self:
+            agg = fn(agg, v)
+        return agg
+
+    def sum(self):
+        return self.aggregate(0, lambda a, b: a + b)
+
+    def concatenate(self, other: Iterator[K]) -> LinkedList[K]:
+        for v in other:
+            self.push(v)
+        return self
+
+    def filter(self, fn: Callable[[T], bool]) -> LinkedList[K]:
+        """ this operation is immediate and not lazy - creates new list """
+        new_list = LinkedList()
+        for v in self:
+            if fn(v):
+                new_list.push(v)
+        return new_list
+
+    def filter_iter(self, fn: Callable[[T], bool]) -> Iterable[K]:
+        node = self._root
+        while not node.is_empty():
+            if fn(node.value):
+                yield node.value
+            node = node.next
+
+    def __add__(self, other):
+        return self.concatenate(other)
 
     def __repr__(self) -> str:
         return f"LinkedList({list(self)})"
