@@ -48,6 +48,7 @@ class MyTestCase(unittest.TestCase):
         self.assertListEqual(ls.reverse_list(), [4,3,2])
 
         self.assertTrue(ls.exists(3))
+        self.assertTrue(3 in ls)
         self.assertRaises(IndexError, ls.get, 10)
 
         no_4 = ls.filter_iter(lambda x: x != 4)
@@ -57,6 +58,18 @@ class MyTestCase(unittest.TestCase):
 
         ls[1] = 6
         self.assertListEqual(ls.to_list(), [2,6,4])
+
+        ls[1] = 3
+        ls.prepend(1)
+        self.assertListEqual(ls.to_list(), [1,2,3,4])
+
+        ls.prepend(0)
+        self.assertListEqual(ls.to_list(), [0,1,2,3,4])
+
+        self.assertListEqual(ls.join(LinkedList().prepend(5)).to_list(), [0,1,2,3,4,5])
+        self.assertListEqual(ls.join(LinkedList().push(5).push(6)).to_list(), [0,1,2,3,4,5,5,6])
+
+        self.assertListEqual(LinkedList().prepend(1).to_list(), [1])
 
     def test_operations_on_empty_list(self):
         ls = LinkedList[int]()
@@ -76,14 +89,15 @@ class MyTestCase(unittest.TestCase):
         ls.push(4)
 
         self.assertEqual(ls.aggregate(0, lambda a, b: a + b), 9)
-        self.assertEqual(ls.sum(), 9)
 
         found_list = ls.aggregate(LinkedList[int](), lambda a, b: a.push(b))
         self.assertListEqual(found_list.to_list(), ls.to_list())
+        self.assertEqual(ls.aggregate("", lambda a, b: f"{a}{b}"), "234")
 
         self.assertListEqual((ls + [5]).to_list(), [2,3,4,5])
-        ls+=6
-        self.assertListEqual(ls.to_list(), [2,3,4,5,6])
+        self.assertListEqual((ls + LinkedList(6)).to_list(), [2,3,4,5,6])
+        ls+=7
+        self.assertListEqual(ls.to_list(), [2,3,4,5,6,7])
 
 if __name__ == '__main__':
     unittest.main()

@@ -24,18 +24,39 @@ class _EmptyNode(_Node[T]):
 
 class LinkedList(Generic[T]):
     """
-    Class represents 2-direction LinkedList
+    Class represents 2-directional LinkedList
     add and prepend are O(1)
     pop and peek for first and last element are O(1)
     find element by index O(n)
+    :param value to append if it's not None
     """
-    def __init__(self):
+    def __init__(self, value: T = None):
         self._empty = _EmptyNode()
         self._root = self._empty
         self._last = self._root
         self._size = 0
+        if value is not None:
+            self.push(value)
+
+    def prepend(self, value: T) -> LinkedList[T]:
+        the_root = self._root
+        if self._root.is_empty():
+            self._root = _Node(value, self._empty, the_root)
+            self._last = self._root
+        else:
+            new_node = _Node(value, the_root, self._empty)
+            the_root.prev = new_node
+            self._root = new_node
+
+        self._size = self._size + 1
+        return self
 
     def push(self, value: T) -> LinkedList[K]:
+        """
+        Appends the value to end of the list
+        :param value: to append to the end of list
+        :return: LinkedList with new value appended
+        """
         the_last = self._last
         if self._root.is_empty():
             self._root = _Node(value, self._empty, the_last)
@@ -204,21 +225,34 @@ class LinkedList(Generic[T]):
                 return True
         return False
 
-    def aggregate(self, zero: Generic[K], fn: Callable[[T, T], K]) -> Generic[K]:
+    def __contains__(self, *args, **kwargs):
+        return self.exists(args[0])
+
+    def aggregate(self, zero: Generic[K], fn: Callable[[K, T], K]) -> Generic[K]:
+        """
+
+        :param zero: initial value for aggregation
+        :param fn: function to accumulate previously aggregated K and current T
+        :return: aggregated value
+        """
         agg = zero
         for v in self:
             agg = fn(agg, v)
         return agg
 
-    def sum(self):
-        return self.aggregate(0, lambda a, b: a + b)
+    def join(self, other: LinkedList[T]) -> LinkedList[T]:
+        the_last = self._last
+        the_last.next = other._root
+        other._root.prev = the_last
+        self._last = other._last
+        return self
 
-    def concatenate(self, other: Iterator[K]) -> LinkedList[K]:
+    def concatenate(self, other: Iterator[T]) -> LinkedList[T]:
         for v in other:
             self.push(v)
         return self
 
-    def filter(self, fn: Callable[[T], bool]) -> LinkedList[K]:
+    def filter(self, fn: Callable[[T], bool]) -> LinkedList[T]:
         """ this operation is immediate and not lazy - creates new list """
         new_list = LinkedList()
         for v in self:
@@ -226,7 +260,7 @@ class LinkedList(Generic[T]):
                 new_list.push(v)
         return new_list
 
-    def filter_iter(self, fn: Callable[[T], bool]) -> Iterable[K]:
+    def filter_iter(self, fn: Callable[[T], bool]) -> Iterable[T]:
         node = self._root
         while not node.is_empty():
             if fn(node.value):
@@ -234,7 +268,11 @@ class LinkedList(Generic[T]):
             node = node.next
 
     def __add__(self, other):
-        return self.concatenate(other)
+        if isinstance(other, LinkedList):
+            return self.join(other)
+        elif isinstance(other, Iterable):
+            return self.concatenate(other)
+        raise TypeError("Can only add LinkedList to LinkedList or Iterable to LinkedList")
 
     def __repr__(self) -> str:
         return f"LinkedList({list(self)})"
