@@ -19,6 +19,9 @@ class _EmptyNode(_Node[T]):
     def __init__(self):
         super().__init__(None)
 
+    def __set__(self, instance, value):
+        raise AttributeError("Can not set value to empty node")
+
     def is_empty(self) -> bool:
         return True
 
@@ -247,7 +250,7 @@ class LinkedList(Generic[T]):
         self._last = other._last
         return self
 
-    def concatenate(self, other: Iterator[T]) -> LinkedList[T]:
+    def concatenate(self, other: Iterable[T]) -> LinkedList[T]:
         for v in other:
             self.push(v)
         return self
